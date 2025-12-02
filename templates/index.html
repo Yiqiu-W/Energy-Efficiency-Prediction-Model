@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Energy Prediction</title>
+</head>
+<body>
+    <h1>Energy Prediction Form</h1>
+    <form method="POST" action="/predict">
+        <label>Relative Compactness:</label>
+        <input type="number" step="0.01" name="f1" required><br>
+
+        <label>Surface Area:</label>
+        <input type="number" step="0.01" name="f2" required><br>
+
+        <label>Wall Area:</label>
+        <input type="number" step="0.01" name="f3" required><br>
+
+        <label>Roof Area:</label>
+        <input type="number" step="0.01" name="f4" required><br>
+
+        <label>Overall Height:</label>
+        <input type="number" step="0.01" name="f5" required><br>
+
+        <label>Orientation:</label>
+        <input type="number" step="1" name="f6" required><br>
+
+        <label>Glazing Area:</label>
+        <input type="number" step="0.01" name="f7" required><br>
+
+        <label>Glazing Area Distribution:</label>
+        <input type="number" step="1" name="f8" required><br>
+
+        <button type="submit">Predict</button>
+    </form>
+</body>
+</html>
