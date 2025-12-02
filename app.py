@@ -1,13 +1,18 @@
-from flask import Flask, request, render_template, jsonify
-import tensorflow as tf
-import joblib
+from flask import Flask, request, render_template
 import numpy as np
+import joblib
+import tensorflow as tf
 
 app = Flask(__name__)
 
-# -------- LOAD MODELS + SCALER --------
-heat_model = tf.keras.models.load_model("best_heat_model.keras")
-cool_model = tf.keras.models.load_model("best_cool_model.keras")
+# Load TFLite models
+heat_interpreter = tf.lite.Interpreter(model_path="best_heat_model.tflite")
+heat_interpreter.allocate_tensors()
+
+cool_interpreter = tf.lite.Interpreter(model_path="best_cool_model.tflite")
+cool_interpreter.allocate_tensors()
+
+# Load scaler
 scaler = joblib.load("scaler.pkl")
 
 FEATURE_ORDER = [
@@ -21,12 +26,19 @@ FEATURE_ORDER = [
     "Glazing_Area_Distribution"
 ]
 
-# -------- HOME PAGE --------
+def run_tflite(interpreter, data):
+    input_index = interpreter.get_input_details()[0]['index']
+    output_index = interpreter.get_output_details()[0]['index']
+    interpreter.set_tensor(input_index, data)
+    interpreter.invoke()
+    return interpreter.get_tensor(output_index)[0][0]
+
+
 @app.route("/")
 def home():
     return render_template("index.html", feature_order=FEATURE_ORDER)
 
-# -------- PREDICT (POST from the form) --------
+
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
@@ -35,10 +47,10 @@ def predict():
             values.append(float(request.form[f]))
 
         X = np.array(values).reshape(1, -1)
-        X_scaled = scaler.transform(X)
+        X_scaled = scaler.transform(X).astype(np.float32)
 
-        heating = float(heat_model.predict(X_scaled)[0][0])
-        cooling = float(cool_model.predict(X_scaled)[0][0])
+        heating = run_tflite(heat_interpreter, X_scaled)
+        cooling = run_tflite(cool_interpreter, X_scaled)
 
         return render_template(
             "index.html",
@@ -47,9 +59,9 @@ def predict():
             cooling=cooling,
             filled_values=request.form
         )
-
     except Exception as e:
         return render_template("index.html", feature_order=FEATURE_ORDER, error=str(e))
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
