@@ -1,63 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Energy Efficiency Predictor</title>
+    <title>Energy Efficiency Prediction</title>
 </head>
 <body>
+
     <h2>Energy Efficiency Prediction</h2>
 
-    <form id="predictForm">
-        <label>Relative Compactness:</label>
-        <input type="number" step="0.01" name="Relative_Compactness" required><br><br>
+    <form action="/predict" method="POST">
 
-        <label>Surface Area:</label>
-        <input type="number" step="0.1" name="Surface_Area" required><br><br>
-
-        <label>Wall Area:</label>
-        <input type="number" step="0.1" name="Wall_Area" required><br><br>
-
-        <label>Roof Area:</label>
-        <input type="number" step="0.1" name="Roof_Area" required><br><br>
-
-        <label>Overall Height:</label>
-        <input type="number" step="0.1" name="Overall_Height" required><br><br>
-
-        <label>Orientation (1–4):</label>
-        <input type="number" name="Orientation" required><br><br>
-
-        <label>Glazing Area:</label>
-        <input type="number" step="0.01" name="Glazing_Area" required><br><br>
-
-        <label>Glazing Area Distribution:</label>
-        <input type="number" name="Glazing_Area_Distribution" required><br><br>
+        {% for f in feature_order %}
+            <label>{{ f }}:</label>
+            <input 
+                type="number" 
+                name="{{ f }}" 
+                step="0.01" 
+                required
+                value="{{ filled_values[f] if filled_values else '' }}"
+            >
+            <br><br>
+        {% endfor %}
 
         <button type="submit">Predict</button>
     </form>
 
-    <h3 id="result"></h3>
+    <hr>
 
-    <script>
-        document.getElementById("predictForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
+    {% if heating is defined and cooling is defined %}
+        <h3>Results:</h3>
+        <p><strong>Heating Load:</strong> {{ heating | round(2) }}</p>
+        <p><strong>Cooling Load:</strong> {{ cooling | round(2) }}</p>
+    {% endif %}
 
-            const formData = new FormData(this);
+    {% if error %}
+        <p style="color:red;"><strong>Error:</strong> {{ error }}</p>
+    {% endif %}
 
-            const response = await fetch("/predict", {
-                method: "POST",
-                body: formData
-            });
-
-            const result = await response.json();
-
-            if (result.error) {
-                document.getElementById("result").innerHTML =
-                    "Error: " + result.error;
-            } else {
-                document.getElementById("result").innerHTML =
-                    "Cooling Load: " + result.cooling_load.toFixed(2) +
-                    "<br>Heating Load: " + result.heating_load.toFixed(2);
-            }
-        });
-    </script>
 </body>
 </html>
